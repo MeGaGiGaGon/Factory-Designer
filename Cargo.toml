@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies] 
 slotmap = "1.0.7"
-eframe = { git = "https://github.com/emilk/egui.git", branch = "master", features = ["wgpu", "serde", "persistence"] }
-wgpu = {version = "0.20.0", features=["angle"]}
+eframe = { git = "https://github.com/emilk/egui.git", branch = "master", features = ["wgpu", "serde"] }
+wgpu = {version = "22.1.0", features=["angle"]}
 dyn-clone = "1.0.17"
