@@ -26,16 +26,19 @@ impl Node for OneToNNode {
     ) {
         let mut output_callbacks = Vec::new();
         for _ in 0..self.output_count.borrow().clone() {
-            output_callbacks.push(NodeOutput::output(|| {self.output_count.borrow_mut().add_assign(1); self.value_1.borrow().clone()}));
+            output_callbacks.push(NodeOutput::output(|| {
+                self.output_count.borrow_mut().add_assign(1);
+                self.value_1.borrow().clone()
+            }));
         }
         self.output_count.replace(1);
         (
-            vec![NodeInput::input(
-                |x| {
-                    self.value_1.replace(x);
-                },
-            ),],
-            Box::new(|ui| {unselectable_label(ui, self.value_1.borrow().to_string());}),
+            vec![NodeInput::input(|x| {
+                self.value_1.replace(x);
+            })],
+            Box::new(|ui| {
+                unselectable_label(ui, self.value_1.borrow().to_string());
+            }),
             output_callbacks,
         )
     }

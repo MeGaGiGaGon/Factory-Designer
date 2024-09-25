@@ -174,7 +174,7 @@ impl<'a: 'b, 'b> NodeGraph<'a, 'b> {
                                     && transform.mul_pos(pos).distance_sq(
                                         ui.ctx()
                                             .input(|i| i.pointer.hover_pos().unwrap_or_default()),
-                                    ) <= 25.0
+                                    ) <= 100.0
                                 {
                                     link_dropped = false;
                                     self.next_frame_link_dropped = false;
@@ -210,7 +210,7 @@ impl<'a: 'b, 'b> NodeGraph<'a, 'b> {
                                     && transform.mul_pos(pos).distance_sq(
                                         ui.ctx()
                                             .input(|i| i.pointer.hover_pos().unwrap_or_default()),
-                                    ) <= 25.0
+                                    ) <= 100.0
                                 {
                                     link_dropped = false;
                                     self.next_frame_link_dropped = false;
