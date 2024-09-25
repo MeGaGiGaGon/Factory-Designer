@@ -3,6 +3,7 @@ mod node_output;
 mod node_graph;
 mod node;
 mod nodes;
+mod createable_node;
 
 use eframe::egui;
 use eframe::egui::Response;
@@ -11,6 +12,7 @@ use eframe::egui::WidgetText;
 use eframe::NativeOptions;
 use node_input::NodeInput;
 use node_output::NodeOutput;
+use nodes::graph_node::GraphNode;
 
 use crate::node::Node;
 use crate::node_graph::NodeGraph;
@@ -49,6 +51,7 @@ fn main() -> eframe::Result<()> {
     graph.register_node(SinkNode::default());
     graph.register_node(AdderNode::default());
     graph.register_node(OneToNNode::default());
+    graph.register_node_with_id::<GraphNode>();
     eframe::run_simple_native("app_name", NativeOptions::default(), move |ctx, _frame| {
         graph.show(ctx);
     })

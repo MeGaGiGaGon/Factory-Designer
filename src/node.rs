@@ -17,7 +17,12 @@ use crate::unselectable_label;
 pub trait Node: DynClone {
     /// The title to display for the node
     fn title(&self) -> &str;
-    /// The body of the node
+    /// A body is made of three things: a list of inputs, the central ui, a list of outputs
+    /// each input/output can have 2 attached FnOnces: a ui display, and a value callback
+    /// The ui display is normal |ui| {}
+    /// The callback is created via a function fn on_connect_input/output<T> where T is the type input output
+    /// Connecting two connectors together is only possible if they share the same value
+    /// values are passed as Box<dyn Any> and downcast is used to check if a connection is possible
     fn body<'a>(&'a mut self) -> (Vec<NodeInput>, Box<dyn FnOnce(&mut Ui) + 'a>, Vec<NodeOutput>);
     /// The method used to display the node
     /// Contains a default implementation that should cover most use cases

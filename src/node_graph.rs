@@ -14,6 +14,7 @@ use eframe::emath::TSTransform;
 use slotmap::new_key_type;
 use slotmap::SlotMap;
 
+use crate::createable_node::CreatableNode;
 use crate::Node;
 
 new_key_type! {pub struct NodeKey;}
@@ -21,11 +22,13 @@ new_key_type! {pub struct ConnectorKey;}
 new_key_type! {pub struct InputPointKey;}
 new_key_type! {pub struct LinkKey;}
 
+#[derive(Clone)]
 struct NodeInformation<'a> {
     node: Box<dyn Node + 'a>,
     position: Pos2,
 }
 
+#[derive(Clone)]
 pub struct NodeGraph<'a, 'b> {
     nodes: SlotMap<NodeKey, NodeInformation<'b>>,
     // attachment_points: SlotMap<ConnectorKey, ConnectorInformation>,
@@ -33,7 +36,11 @@ pub struct NodeGraph<'a, 'b> {
     // links: SlotMap<LinkKey, LinkInformation>,
     transform: TSTransform,
     id: Id,
-    registered_nodes: Vec<Box<dyn Node + 'a>>,
+    /// The boxed node of these tuples has two uses: what to display in the node list,
+    /// and a source for cloning nodes that don't need ids
+    registered_nodes: Vec<(Box<dyn Node + 'a>, fn(Id, &Box<dyn Node + 'a>) -> Box<dyn Node + 'a>)>,
+    display_list_id_source: usize,
+    new_node_id_source: usize,
     pub selector_panel_enabled: bool,
     link_drag_info: Option<(NodeKey, TypeId, Pos2, bool, usize)>,
     next_frame_link_dropped: bool,
@@ -53,6 +60,8 @@ impl<'a: 'b, 'b> NodeGraph<'a, 'b> {
             link_drag_info: Default::default(),
             next_frame_link_dropped: Default::default(),
             links: Default::default(),
+            display_list_id_source: Default::default(),
+            new_node_id_source: Default::default(),
             // input_points: Default::default(),
         }
     }
@@ -62,7 +71,14 @@ impl<'a: 'b, 'b> NodeGraph<'a, 'b> {
     /// and what will be placed when dragging in from the list
     /// Note that registering a node multiple times will duplicate it in the display
     pub fn register_node<'c>(&mut self, node: impl Node + 'c + 'a) {
-        self.registered_nodes.push(Box::new(node));
+        self.registered_nodes.push((Box::new(node), |_, node| node.clone()));
+    }
+
+    /// Used as an alternate method of adding nodes to the graph 
+    /// for nodes that require a unique Id to work
+    pub fn register_node_with_id<T>(&mut self) where T: CreatableNode<'a> {
+        self.registered_nodes.push((T::new_with_id(self.id.with("displayed node").with(self.display_list_id_source)), |id, _| T::new_with_id(id)));
+        self.display_list_id_source += 1;
     }
 
     /// Adds a node to the graph, returning the `NodeKey` unique to it
@@ -87,7 +103,7 @@ impl<'a: 'b, 'b> NodeGraph<'a, 'b> {
         if self.selector_panel_enabled {
             let mut node_to_add = None;
             egui::SidePanel::left(self.id.with("node list")).show_inside(ui, |ui| {
-                for (index, mut node) in self.registered_nodes.clone().into_iter().enumerate() {
+                for (index, (mut node, new_node_func)) in self.registered_nodes.clone().into_iter().enumerate() {
                     let rect = ui.add_enabled_ui(true, |ui| node.show(ui)).response.rect;
                     let response = ui.allocate_rect(rect, Sense::drag());
                     if response.dragged() {
@@ -103,7 +119,8 @@ impl<'a: 'b, 'b> NodeGraph<'a, 'b> {
                     }
                     if response.drag_stopped() {
                         if let Some(pos) = ui.ctx().input(|i| i.pointer.interact_pos()) {
-                            node_to_add = Some((node, pos));
+                            node_to_add = Some((new_node_func(self.id.with("new node").with(self.new_node_id_source), &node), pos));
+                            self.new_node_id_source += 1;
                         }
                     }
                 }
@@ -285,5 +302,10 @@ impl<'a: 'b, 'b> NodeGraph<'a, 'b> {
             self.next_frame_link_dropped = false;
             self.link_drag_info = None;
         }
+    }
+
+    pub fn enable_selector_panel(mut self) -> Self {
+        self.selector_panel_enabled = true;
+        self
     }
 }
